@@ -17,24 +17,9 @@
 ## along with this library.  If not, see <http://www.gnu.org/licenses/>.
 ##
 
-LIBNAME		= libopencm3_stm32f4
+BINARY = usbdfu
 
-PREFIX	?= arm-none-eabi
-# PREFIX		?= arm-elf
-CC		= $(PREFIX)-gcc
-AR		= $(PREFIX)-ar
-CFLAGS		= -Os -g -Wall -Wextra -I../../../include -fno-common \
-		  -mcpu=cortex-m4 -mthumb \
-		  -Wstrict-prototypes \
-		  -ffunction-sections -fdata-sections -MD -DSTM32F4
-# ARFLAGS	= rcsv
-ARFLAGS		= rcs
-OBJS		= rcc.o gpio.o usart.o spi.o flash.o \
-		  i2c.o exti2.o pwr.o timer.o \
-		  usb.o usb_standard.o usb_control.o usb_fx07_common.o usb_f107.o \
-		  usb_f207.o adc.o dma.o \
-		  gpio_common_all.o gpio_common_f24.o
-
-VPATH += ../../usb:../:../../cm3:../common
+LDSCRIPT = usbdfu.ld
 
 include ../../Makefile.include
+
