@@ -450,6 +450,9 @@ void rcc_clock_setup_hse_3v3(const clock_scale_t *clock)
 	/* Set the peripheral clock frequencies used. */
 	rcc_ppre1_frequency = clock->apb1_frequency;
 	rcc_ppre2_frequency = clock->apb2_frequency;
+	
+	/* Disable internal high-speed oscillator. */
+	rcc_osc_off(HSI);
 }
 
 void rcc_backupdomain_reset(void)

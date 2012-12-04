@@ -29,25 +29,25 @@ void clock_setup(void)
 	rcc_clock_setup_hse_3v3(&hse_12mhz_3v3[CLOCK_3V3_168MHZ]);
 
 	/* Enable GPIOD clock for LED & USARTs. */
-	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPDEN);
+	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPCEN);
 	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
 
-	/* Enable clocks for USART2. */
-	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART2EN);
+	/* Enable clocks for USART3. */
+	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_USART3EN);
 }
 
 void usart_setup(void)
 {
-	/* Setup USART2 parameters. */
-	usart_set_baudrate(USART2, 38400);
-	usart_set_databits(USART2, 8);
-	usart_set_stopbits(USART2, USART_STOPBITS_1);
-	usart_set_mode(USART2, USART_MODE_TX);
-	usart_set_parity(USART2, USART_PARITY_NONE);
-	usart_set_flow_control(USART2, USART_FLOWCONTROL_NONE);
+	/* Setup USART3 parameters. */
+	usart_set_baudrate(USART3, 115200);
+	usart_set_databits(USART3, 8);
+	usart_set_stopbits(USART3, USART_STOPBITS_1);
+	usart_set_mode(USART3, USART_MODE_TX);
+	usart_set_parity(USART3, USART_PARITY_NONE);
+	usart_set_flow_control(USART3, USART_FLOWCONTROL_NONE);
 
 	/* Finally enable the USART. */
-	usart_enable(USART2);
+	usart_enable(USART3);
 }
 
 void gpio_setup(void)
@@ -55,11 +55,11 @@ void gpio_setup(void)
 	/* Setup GPIO pin GPIO12 on GPIO port D for LED. */
 	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13);
 
-	/* Setup GPIO pins for USART2 transmit. */
-	gpio_mode_setup(GPIOA, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO2);
+	/* Setup GPIO pins for USART3 transmit. */
+	gpio_mode_setup(GPIOC, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO10);
 
-	/* Setup USART2 TX pin as alternate function. */
-	gpio_set_af(GPIOA, GPIO_AF7, GPIO2);
+	/* Setup USART3 TX pin as alternate function. */
+	gpio_set_af(GPIOC, GPIO_AF7, GPIO10);
 }
 
 /* Maximum number of iterations for the escape-time calculation */
@@ -94,10 +94,10 @@ static void mandel(float cX, float cY, float scale)
 		for(y=-50;y<50;y++)
 		{
 			int i = iterate(cX+x*scale, cY+y*scale);
-			usart_send_blocking(USART2, color[i]);
+			usart_send_blocking(USART3, color[i]);
 		}
-		usart_send_blocking(USART2, '\r');
-		usart_send_blocking(USART2, '\n');
+		usart_send_blocking(USART3, '\r');
+		usart_send_blocking(USART3, '\n');
 	}
 }
 
@@ -119,8 +119,8 @@ int main(void)
 		centerY += 0.522f * scale;
 		scale	*= 0.875f;
 
-		usart_send_blocking(USART2, '\r');
-		usart_send_blocking(USART2, '\n');
+		usart_send_blocking(USART3, '\r');
+		usart_send_blocking(USART3, '\n');
 	}
 
 	return 0;

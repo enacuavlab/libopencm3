@@ -27,6 +27,7 @@ OBJCOPY		= $(PREFIX)-objcopy
 OBJDUMP		= $(PREFIX)-objdump
 GDB		= $(PREFIX)-gdb
 FLASH		= $(shell which st-flash)
+DFU 	= /home/sergej/paparazzi/sw/tools/dfu/stm32_mem_krooz.py
 
 TOOLCHAIN_DIR ?= ../../../../..
 ifeq ($(wildcard ../../../../../lib/libopencm3_stm32f4.a),)
@@ -114,6 +115,10 @@ clean:
 %.stlink-flash: %.bin
 	@printf "  FLASH  $<\n"
 	$(Q)$(FLASH) write $(*).bin 0x8000000
+	
+%.dfu-flash: %.bin
+	@printf "  DFU  $<\n"
+	$(Q) python $(DFU) $(*).bin
 
 	
 ifeq ($(BMP_PORT),)
