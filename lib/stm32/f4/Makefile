@@ -27,6 +27,7 @@ CFLAGS		= -Os -g -Wall -Wextra -I../../../include -fno-common \
 		  -mcpu=cortex-m4 -mthumb \
 		  -Wstrict-prototypes \
 		  -ffunction-sections -fdata-sections -MD -DSTM32F4
+#CFLAGS		+= -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # ARFLAGS	= rcsv
 ARFLAGS		= rcs
 OBJS		= rcc.o gpio.o usart.o spi.o flash.o \
