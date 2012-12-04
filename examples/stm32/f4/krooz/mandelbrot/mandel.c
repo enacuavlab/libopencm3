@@ -22,6 +22,7 @@
 #include <libopencm3/stm32/f4/rcc.h>
 #include <libopencm3/stm32/f4/gpio.h>
 #include <libopencm3/stm32/usart.h>
+#include <libopencm3/stm32/timer.h>
 
 void clock_setup(void)
 {
@@ -62,6 +63,17 @@ void gpio_setup(void)
 	gpio_set_af(GPIOC, GPIO_AF7, GPIO10);
 }
 
+void timer_setup(void)
+{
+	rcc_peripheral_enable_clock(&RCC_APB1ENR, RCC_APB1ENR_TIM2EN);
+	timer_reset(TIM2);
+	timer_set_mode(TIM2, TIM_CR1_CKD_CK_INT_MUL_4,
+               TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+	timer_set_period(TIM2, 0xFFFFFFFF);
+	timer_set_prescaler(TIM2, 0xFFFF);
+	timer_enable_counter(TIM2);
+}
+
 /* Maximum number of iterations for the escape-time calculation */
 #define maxIter 32
 /* This array converts the iteration count to a character representation. */
@@ -94,33 +106,64 @@ static void mandel(float cX, float cY, float scale)
 		for(y=-50;y<50;y++)
 		{
 			int i = iterate(cX+x*scale, cY+y*scale);
-			usart_send_blocking(USART3, color[i]);
+			//usart_send_blocking(USART3, color[i]);
 		}
-		usart_send_blocking(USART3, '\r');
-		usart_send_blocking(USART3, '\n');
+		//usart_send_blocking(USART3, '\r');
+		//usart_send_blocking(USART3, '\n');
 	}
+}
+
+static void ascii(char byte)
+{
+	char hunds, tens, ones;
+	hunds = byte / 100;
+	usart_send_blocking(USART3, hunds + 48);
+	tens = (byte - hunds*100)/10;
+	usart_send_blocking(USART3, tens + 48);
+	ones = byte - hunds*100 - tens*10;
+	usart_send_blocking(USART3, ones + 48);
 }
 
 int main(void)
 {
 	float scale = 0.25f, centerX = -0.5f, centerY = 0.0f;
+	long time_past = 0, time_now = 0, time = 0;
+	long cnt = 0;
 
 	clock_setup();
 	gpio_setup();
 	usart_setup();
+	timer_setup();
 
 	while (1) {
 		/* Blink the LED (PD12) on the board with each fractal drawn. */
-		gpio_toggle(GPIOA, GPIO13);	/* LED on/off */
+		if(cnt++ > 1000)
+		{
+			cnt = 0;
+			gpio_toggle(GPIOA, GPIO13);	/* LED on/off */
+		}
 		mandel(centerX,centerY,scale);	/* draw mandelbrot */
 
 		/* Change scale and center */
 		centerX += 0.175f * scale;
 		centerY += 0.522f * scale;
 		scale	*= 0.875f;
-
-		usart_send_blocking(USART3, '\r');
-		usart_send_blocking(USART3, '\n');
+		
+		time_now = timer_get_counter(TIM2);
+		if(time_now > time_past)
+		{
+			time = time_now - time_past;
+			time_past = time_now;
+			ascii((time>>24)&0xFF); usart_send_blocking(USART3, ' ');
+			ascii((time>>16)&0xFF); usart_send_blocking(USART3, ' ');
+			ascii((time>>8)&0xFF); usart_send_blocking(USART3, ' ');
+			ascii(time&0xFF);
+			usart_send_blocking(USART3, '\r');
+			usart_send_blocking(USART3, '\n');
+		}
+		
+		//usart_send_blocking(USART3, '\r');
+		//usart_send_blocking(USART3, '\n');
 	}
 
 	return 0;
