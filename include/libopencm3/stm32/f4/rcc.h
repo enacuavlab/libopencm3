@@ -457,6 +457,7 @@ extern u32 rcc_ppre2_frequency;
 /* --- Function prototypes ------------------------------------------------- */
 
 typedef enum {
+	CLOCK_3V3_48MHZ,
 	CLOCK_3V3_120MHZ,
 	CLOCK_3V3_168MHZ,
 	CLOCK_3V3_END

@@ -29,6 +29,16 @@
 
 #define USE_LED
 
+#ifdef USE_LED
+#define RED		 GPIO13
+#define GREEN	 GPIO14
+#define YELLOW GPIO15
+
+#define LED_ON(_led) 				gpio_clear(GPIOA, _led);
+#define LED_OFF(_led) 			gpio_set(GPIOA, _led);
+#define LED_TOGGLE(_led) 		gpio_toggle(GPIOA, _led);
+#endif
+
 #define APP_ADDRESS	0x08004000
 #define SECTOR_SIZE	2048
 
@@ -45,6 +55,10 @@ u32 sector_addr[12] = {0x08000000, 0x08004000, 0x08008000, 0x0800C000,
 											 0x08010000, 0x08020000, 0x08040000, 
 											 0x08060000, 0x08080000, 0x080A0000, 
 											 0x080C0000, 0x080E0000};
+u16 sector_erase_time[12]= {500, 1000, 500, 500, 
+											 1000, 1500, 1500, 
+											 1500, 1500, 1500, 
+											 1500, 1500};
 u8 sector_num = 1;
 
 static enum dfu_state usbdfu_state = STATE_DFU_IDLE;
@@ -134,19 +148,11 @@ static u8 usbdfu_getstatus(usbd_device *usbd_dev, u32 *bwPollTimeout)
 	switch (usbdfu_state) {
 	case STATE_DFU_DNLOAD_SYNC:
 		usbdfu_state = STATE_DFU_DNBUSY;
-		*bwPollTimeout = 90;
+		*bwPollTimeout = 70;
 		
 		if (prog.blocknum == 0 && prog.buf[0] == CMD_ERASE)
-			if(*(u32 *)(prog.buf + 1) == sector_addr[sector_num]) {
-				if(sector_num > 3)
-					*bwPollTimeout = 1900;
-				else {
-					if(sector_num == 1)
-						*bwPollTimeout = 1700;
-					else
-						*bwPollTimeout = 800;
-				}
-			}
+			if(*(u32 *)(prog.buf + 1) == sector_addr[sector_num])
+				*bwPollTimeout = sector_erase_time[sector_num];
 		
 		return DFU_STATUS_OK;
 	case STATE_DFU_MANIFEST_SYNC:
@@ -173,29 +179,46 @@ static void usbdfu_getstatus_complete(usbd_device *usbd_dev, struct usb_setup_da
 			case CMD_ERASE:
 				addr = *(u32 *)(prog.buf + 1);
 				/* Unprotect user application area */
-				if(addr == APP_ADDRESS)
+				if(addr == APP_ADDRESS) {
 					//if(!(FLASH_OPTCR & USER_AP_WP))
+					#ifdef USE_LED
+						LED_ON(GREEN)
+					#endif
 						flash_program_option_bytes(FLASH_OPTCR | USER_AP_WP);
+					#ifdef USE_LED
+						LED_OFF(GREEN)
+					#endif
+				}
 				if(addr == sector_addr[sector_num] && (addr >= APP_ADDRESS)) {
 			#ifdef USE_LED
-					gpio_toggle(GPIOA, GPIO15);
+					LED_ON(YELLOW)
 			#endif
 					flash_erase_sector((sector_num&0x0F) << 3, 2<<8);
+			#ifdef USE_LED
+					LED_OFF(YELLOW)
+			#endif
 					sector_num++;
 				}
 			case CMD_SETADDR:
 				prog.addr = *(u32 *)(prog.buf + 1);
 			}
 		} else {
-		#ifdef USE_LED	
-			gpio_toggle(GPIOA, GPIO14);
-		#endif
+		
 			u32 baseaddr = prog.addr + ((prog.blocknum - 2) *
 				       dfu_function.wTransferSize);
-			if(baseaddr >= APP_ADDRESS)
-				for (i = 0; i < prog.len; i += 2)
-					flash_program_half_word(baseaddr + i,
-						*(u16 *)(prog.buf + i), 1<<8);
+			if(baseaddr >= APP_ADDRESS) {
+			#ifdef USE_LED	
+				LED_ON(GREEN)
+			#endif
+				
+				for (i = 0; i < prog.len; i += 4)
+					flash_program_word(baseaddr + i,
+						*(u32 *)(prog.buf + i), 2<<8);
+				
+			#ifdef USE_LED	
+				LED_OFF(GREEN)
+			#endif
+			}
 		}
 		flash_lock();
 		
@@ -284,7 +307,9 @@ bool gpio_force_bootloader()
 int main(void)
 {
 	//if ((*(volatile u32 *)APP_ADDRESS & 0x2FFE0000) == 0x20000000)
-	if ((!gpio_force_bootloader() && 1) || (FLASH_OPTCR & USER_AP_WP)) 
+	if (!(gpio_force_bootloader() && 1)
+				 || (FLASH_OPTCR & USER_AP_WP)
+			) 
 	{
 		/* Boot the application if it's valid. */
 		 {
@@ -302,7 +327,7 @@ int main(void)
 
 	usbd_device *usbd_dev;
 	
-	rcc_clock_setup_hse_3v3(&hse_12mhz_3v3[CLOCK_3V3_120MHZ]);
+	rcc_clock_setup_hse_3v3(&hse_12mhz_3v3[CLOCK_3V3_48MHZ]);
 
 	rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
 	gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, GPIO13 | GPIO14 | GPIO15);
@@ -310,8 +335,8 @@ int main(void)
 	gpio_set(GPIOA, GPIO14 | GPIO15);
 	
 	/* Write protect bootloader sector if not yet */
-	if((FLASH_OPTCR & 0x10000))
-		flash_program_option_bytes(FLASH_OPTCR & ~0x10000);
+	//if((FLASH_OPTCR & 0x10000))
+	//	flash_program_option_bytes(FLASH_OPTCR & ~0x10000);
 	
 	rcc_peripheral_enable_clock(&RCC_AHB2ENR, RCC_AHB2ENR_OTGFSEN);
 
