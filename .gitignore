@@ -16,6 +16,7 @@ lib/*.ld
 html/
 latex/
 *.pdf
+*.pnws
 # These are generated
 include/libopencm3/**/nvic.h
 include/libopencm3/**/**/nvic.h
