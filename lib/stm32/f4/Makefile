@@ -30,11 +30,14 @@ CFLAGS		= -Os -g -Wall -Wextra -I../../../include -fno-common \
 #CFLAGS		+= -mfloat-abi=hard -mfpu=fpv4-sp-d16
 # ARFLAGS	= rcsv
 ARFLAGS		= rcs
-OBJS		= rcc.o gpio.o usart.o spi.o flash.o \
-		  i2c.o exti2.o pwr.o timer.o \
+OBJS		= rcc.o gpio.o flash.o exti2.o pwr.o timer.o \
 		  usb.o usb_standard.o usb_control.o usb_fx07_common.o usb_f107.o \
 		  usb_f207.o adc.o dma.o \
-		  gpio_common_all.o gpio_common_f24.o
+		  pwr_common_all.o \
+		  gpio_common_all.o gpio_common_f24.o dma_common_f24.o spi_common_all.o \
+		  dac_common_all.o usart_common_all.o iwdg_common_all.o i2c_common_all.o \
+		  crc_common_all.o \
+		  rtc_common_bcd.o
 
 VPATH += ../../usb:../:../../cm3:../common
 

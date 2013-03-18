@@ -169,7 +169,6 @@ const struct usb_config_descriptor config = {
 };
 
 static const char *usb_strings[] = {
-	"x",
 	"Black Sphere Technologies",
 	"HID Demo",
 	"DEMO",
@@ -242,7 +241,8 @@ static void hid_set_config(usbd_device *usbd_dev, u16 wValue)
 #endif
 
 	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB_DIV8);
-	systick_set_reload(100000);
+	/* SysTick interrupt every N clock pulses: set reload to N-1 */
+	systick_set_reload(99999);
 	systick_interrupt_enable();
 	systick_counter_enable();
 }
@@ -336,7 +336,7 @@ int main(void)
 	gpio_set_mode(GPIOC, GPIO_MODE_OUTPUT_2_MHZ,
 		      GPIO_CNF_OUTPUT_PUSHPULL, GPIO2);
 
-	usbd_dev = usbd_init(&stm32f107_usb_driver, &dev, &config, usb_strings);
+	usbd_dev = usbd_init(&stm32f107_usb_driver, &dev, &config, usb_strings, 3);
 	usbd_register_set_config_callback(usbd_dev, hid_set_config);
 
 	/* Delay some seconds to show that pull-up switch works. */

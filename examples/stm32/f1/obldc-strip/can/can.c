@@ -75,7 +75,8 @@ void systick_setup(void)
 	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB_DIV8);
 
 	/* 8000000/8000 = 1000 overflows per second - every 1ms one interrupt */
-	systick_set_reload(8000);
+	/* SysTick interrupt every N clock pulses: set reload to N-1 */
+	systick_set_reload(7999);
 
 	systick_interrupt_enable();
 
@@ -124,7 +125,9 @@ void can_setup(void)
 		     CAN_BTR_SJW_1TQ,
 		     CAN_BTR_TS1_9TQ,
 		     CAN_BTR_TS2_6TQ,
-		     2))             /* BRP+1: Baud rate prescaler */
+		     2,
+		     false,
+		     false))             /* BRP+1: Baud rate prescaler */
 	{
 		gpio_clear(GPIOB, GPIO4); /* LED green on */
 		gpio_set(GPIOB, GPIO5);   /* LED red off */

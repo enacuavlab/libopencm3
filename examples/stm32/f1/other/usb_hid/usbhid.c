@@ -165,7 +165,6 @@ const struct usb_config_descriptor config = {
 };
 
 static const char *usb_strings[] = {
-	"x",
 	"Black Sphere Technologies",
 	"HID Demo",
 	"DEMO",
@@ -239,7 +238,8 @@ static void hid_set_config(usbd_device *usbd_dev, u16 wValue)
 #endif
 
 	systick_set_clocksource(STK_CTRL_CLKSOURCE_AHB_DIV8);
-	systick_set_reload(100000);
+	/* SysTick interrupt every N clock pulses: set reload to N-1 */
+	systick_set_reload(99999);
 	systick_interrupt_enable();
 	systick_counter_enable();
 }
@@ -254,7 +254,7 @@ int main(void)
 	AFIO_MAPR |= AFIO_MAPR_SWJ_CFG_JTAG_OFF_SW_ON;
 	gpio_set_mode(GPIOA, GPIO_MODE_INPUT, 0, GPIO15);
 
-	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings);
+	usbd_dev = usbd_init(&stm32f103_usb_driver, &dev, &config, usb_strings, 3);
 	usbd_register_set_config_callback(usbd_dev, hid_set_config);
 
 	gpio_set(GPIOA, GPIO15);
