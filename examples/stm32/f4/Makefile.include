@@ -27,7 +27,6 @@ OBJCOPY		= $(PREFIX)-objcopy
 OBJDUMP		= $(PREFIX)-objdump
 GDB		= $(PREFIX)-gdb
 FLASH		= $(shell which st-flash)
-DFU 	= /home/sergej/paparazzi/sw/tools/dfu/stm32_mem_krooz.py
 
 TOOLCHAIN_DIR ?= ../../../../..
 ifeq ($(wildcard ../../../../../lib/libopencm3_stm32f4.a),)
@@ -42,14 +41,12 @@ endif
 
 CFLAGS		+= -Os -g -Wall -Wextra -I$(TOOLCHAIN_DIR)/include \
 		   -fno-common -mcpu=cortex-m4 -mthumb \
-			  -MD -DSTM32F4
-#CFLAGS		+= -mfloat-abi=hard -mfpu=fpv4-sp-d16
+		   -mfloat-abi=hard -mfpu=fpv4-sp-d16 -MD -DSTM32F4
 LDSCRIPT	?= $(BINARY).ld
 LDFLAGS		+= --static -lc -lnosys -L$(TOOLCHAIN_DIR)/lib \
 			 -L$(TOOLCHAIN_DIR)/lib/stm32/f4 \
 		   -T$(LDSCRIPT) -nostartfiles -Wl,--gc-sections \
-		   -mthumb -mcpu=cortex-m4 -mthumb
-#LDFLAGS		+= -mfloat-abi=hard -mfpu=fpv4-sp-d16
+		   -mthumb -mcpu=cortex-m4 -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16
 OBJS		+= $(BINARY).o
 
 OOCD		?= openocd
@@ -115,10 +112,6 @@ clean:
 %.stlink-flash: %.bin
 	@printf "  FLASH  $<\n"
 	$(Q)$(FLASH) write $(*).bin 0x8000000
-	
-%.dfu-flash: %.bin
-	@printf "  DFU  $<\n"
-	$(Q) python $(DFU) $(*).bin
 
 	
 ifeq ($(BMP_PORT),)
